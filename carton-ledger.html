@@ -1,0 +1,1330 @@
+<title>Carton Ledger</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --bg: #eef0f2;
+    --surface: #ffffff;
+    --surface-2: #f5f6f8;
+    --border: #d7dbe0;
+    --text: #1b1f24;
+    --text-muted: #5b6470;
+    --accent: #8a6a1a;
+    --accent-soft: #f1e6c8;
+    --success: #2f7a52;
+    --success-soft: #e2f1e8;
+    --danger: #a23b2a;
+    --danger-soft: #f7e6e1;
+    --rarity-common: #6b7280;
+    --rarity-uncommon: #4c6478;
+    --rarity-rare: #96751b;
+    --rarity-mythic: #c9490f;
+    --shadow: 0 12px 32px -12px rgba(20, 24, 30, 0.28);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151a;
+      --surface: #1a1e25;
+      --surface-2: #20242c;
+      --border: #2c313c;
+      --text: #e8e6dc;
+      --text-muted: #939bab;
+      --accent: #d9a441;
+      --accent-soft: #3a2f18;
+      --success: #57ab7c;
+      --success-soft: #17301f;
+      --danger: #d3705a;
+      --danger-soft: #34201b;
+      --rarity-common: #8892a0;
+      --rarity-uncommon: #9fb8cc;
+      --rarity-rare: #e0bb52;
+      --rarity-mythic: #ff7a3d;
+      --shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #12151a;
+    --surface: #1a1e25;
+    --surface-2: #20242c;
+    --border: #2c313c;
+    --text: #e8e6dc;
+    --text-muted: #939bab;
+    --accent: #d9a441;
+    --accent-soft: #3a2f18;
+    --success: #57ab7c;
+    --success-soft: #17301f;
+    --danger: #d3705a;
+    --danger-soft: #34201b;
+    --rarity-common: #8892a0;
+    --rarity-uncommon: #9fb8cc;
+    --rarity-rare: #e0bb52;
+    --rarity-mythic: #ff7a3d;
+    --shadow: 0 16px 40px -14px rgba(0, 0, 0, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header.top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .title-block h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 32px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+
+  .title-block p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 13px;
+    max-width: 46ch;
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat .value {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 20px;
+    font-weight: 500;
+  }
+
+  .stat .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat.out .value { color: var(--danger); }
+  .stat.in .value { color: var(--success); }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .search {
+    flex: 1 1 240px;
+    position: relative;
+  }
+
+  .search input {
+    width: 100%;
+    padding: 9px 12px 9px 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+  }
+
+  .search input:focus-visible, select:focus-visible, button:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .search::before {
+    content: "⌕";
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  .segmented {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .segmented button {
+    background: var(--surface);
+    color: var(--text-muted);
+    border: none;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    font-family: inherit;
+  }
+
+  .segmented button:last-child { border-right: none; }
+
+  .segmented button.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+  }
+
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+  .chip.active {
+    color: var(--text);
+    border-color: var(--text);
+    font-weight: 600;
+  }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: auto;
+    max-height: 60vh;
+    box-shadow: var(--shadow);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  th.sortable:hover { color: var(--text); }
+
+  th.sortable.sorted { color: var(--accent); }
+
+  .sort-arrow {
+    display: inline-block;
+    margin-left: 4px;
+    font-size: 10px;
+  }
+
+  tbody tr {
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr:hover { background: var(--surface-2); }
+
+  tbody tr.is-out { opacity: 0.62; }
+
+  td { padding: 10px 14px; vertical-align: middle; }
+
+  .card-name {
+    font-weight: 500;
+  }
+
+  .card-sub {
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-family: "IBM Plex Mono", monospace;
+  }
+
+  .rarity-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+
+  .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .pill.in { background: var(--success-soft); color: var(--success); }
+  .pill.out { background: var(--danger-soft); color: var(--danger); }
+
+  .empty {
+    padding: 48px 20px;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  /* drawer */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 15, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+    z-index: 20;
+  }
+
+  .scrim.open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: min(440px, 92vw);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transform: translateX(100%);
+    transition: transform 0.22s ease;
+    z-index: 21;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .drawer.open { transform: translateX(0); }
+
+  .drawer-head {
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .drawer-head .set-line {
+    color: var(--text-muted);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .drawer-head h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    text-wrap: balance;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 16px;
+    margin-top: 4px;
+  }
+
+  .meta-grid div { font-size: 12.5px; }
+  .meta-grid .k { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .meta-grid .v { font-family: "IBM Plex Mono", monospace; }
+
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .log-form {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .log-form label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .log-form select, .log-form textarea, .log-form input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+  }
+
+  .log-form textarea { min-height: 60px; }
+
+  .submit-btn {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #1b1400;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 7px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .submit-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .entry {
+    display: flex;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .entry:last-child { border-bottom: none; }
+
+  .entry .rail {
+    width: 8px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    padding-top: 4px;
+  }
+
+  .entry .rail .node {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  .entry.out .rail .node { background: var(--danger); }
+  .entry.in .rail .node { background: var(--success); }
+
+  .entry .body { flex: 1; }
+
+  .entry .action-label { font-weight: 600; font-size: 13px; }
+  .entry .comment { margin-top: 3px; color: var(--text); font-size: 13px; white-space: pre-wrap; }
+  .entry .comment:empty { display: none; }
+  .entry .when {
+    font-family: "IBM Plex Mono", monospace;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .log-empty {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    padding: 6px 0 2px;
+  }
+
+  .banner {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .ghost-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -46%);
+    width: min(600px, 92vw);
+    max-height: 86vh;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    z-index: 21;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+
+  .modal.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, -50%);
+  }
+
+  .modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .modal-head h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .modal-body {
+    padding: 16px 20px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .modal-hint {
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .file-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: 12.5px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .file-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #csvText {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    resize: vertical;
+  }
+
+  .import-summary {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    min-height: 18px;
+    white-space: pre-line;
+  }
+
+  .import-summary.ready { color: var(--success); }
+  .import-summary.warn { color: var(--danger); }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .table-wrap .card-sub { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .drawer, .scrim, .toast { transition: none; }
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="title-block">
+      <h1>Carton Ledger</h1>
+      <p>Bitácora de custodia para el cartón de 526 cartas — qué salió, por qué, y cuándo.</p>
+    </div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="toolbar">
+    <div class="search">
+      <input id="searchInput" type="text" placeholder="Buscar por carta, edición o número…" autocomplete="off">
+    </div>
+    <div class="segmented" id="statusSeg">
+      <button data-status="all" class="active">Todas</button>
+      <button data-status="in">En colección</button>
+      <button data-status="out">Retiradas</button>
+    </div>
+    <button class="ghost-btn" id="openImportBtn">+ Agregar cartas</button>
+  </div>
+
+  <div class="chip-row" id="rarityChips"></div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Carta</th>
+          <th>Edición</th>
+          <th>Estado</th>
+          <th class="sortable" data-sort="quantity">Cant.<span class="sort-arrow"></span></th>
+          <th class="sortable" data-sort="price">Precio unit.<span class="sort-arrow"></span></th>
+          <th class="sortable" data-sort="totalPrice">Precio total<span class="sort-arrow"></span></th>
+          <th>Últ. movimiento</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="emptyState" hidden>Cargando cartón…</div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head" id="drawerHead" style="position:relative;"></div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<div class="scrim" id="importScrim"></div>
+<div class="modal" id="importModal" aria-hidden="true">
+  <div class="modal-head">
+    <h2>Agregar cartas al cartón</h2>
+    <button class="icon-btn" id="closeImport">✕</button>
+  </div>
+  <div class="modal-body">
+    <p class="modal-hint">Pega el CSV exportado de ManaBox (o cualquier CSV con esas columnas), o cárgalo como archivo. Columnas reconocidas: Name, Set code, Set name, Collector number, Foil, Rarity, Quantity, ManaBox ID, Scryfall ID, Purchase price, Purchase price currency, Condition, Language, Added.</p>
+    <div class="file-row">
+      <label class="file-btn" for="csvFile">Elegir archivo CSV</label>
+      <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+      <span id="fileName" class="card-sub"></span>
+    </div>
+    <textarea id="csvText" placeholder="Name,Set code,Set name,Collector number,Foil,Rarity,Quantity,ManaBox ID,Scryfall ID,Purchase price,Misprint,Altered,Condition,Language,Purchase price currency,Added"></textarea>
+    <div id="importSummary" class="import-summary"></div>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="parseBtn">Vista previa</button>
+      <button class="submit-btn" id="confirmImportBtn" disabled>Importar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const RARITY_LABEL = { common: 'Común', uncommon: 'Infrecuente', rare: 'Rara', mythic: 'Mítica' };
+  const RARITY_ORDER = ['mythic', 'rare', 'uncommon', 'common'];
+
+  const ACTIONS = [
+    { value: 'retirada_venta', label: 'Retirada — Vendida', status: 'out' },
+    { value: 'retirada_intercambio', label: 'Retirada — Intercambiada', status: 'out' },
+    { value: 'retirada_regalo', label: 'Retirada — Regalada', status: 'out' },
+    { value: 'retirada_dano', label: 'Retirada — Dañada / perdida', status: 'out' },
+    { value: 'gradacion', label: 'Enviada a gradación', status: 'out' },
+    { value: 'nota', label: 'Nota / revisión', status: null },
+    { value: 'reingreso', label: 'Reingresada a la colección', status: 'in' },
+  ];
+  const ACTION_LABEL = Object.fromEntries(ACTIONS.map(a => [a.value, a.label]));
+
+  let db = null;
+  let cards = new Map();
+  let filters = { status: 'all', rarity: 'all', q: '' };
+  let sort = { key: null, dir: 'desc' };
+  let selectedId = null;
+  let logUnsub = null;
+
+  const $ = (sel) => document.querySelector(sel);
+
+  function money(n, currency) {
+    if (n === null || n === undefined) return '—';
+    return '$' + n.toFixed(2) + ' ' + (currency || '');
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function toast(msg) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  function renderRarityChips() {
+    const wrap = $('#rarityChips');
+    const counts = { common: 0, uncommon: 0, rare: 0, mythic: 0 };
+    cards.forEach(c => { if (counts[c.rarity] !== undefined) counts[c.rarity]++; });
+    const all = document.createElement('button');
+    wrap.innerHTML = '';
+    const makeChip = (value, label, color, count) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (filters.rarity === value ? ' active' : '');
+      b.innerHTML = (color ? `<span class="dot" style="background:${color}"></span>` : '') + label + (count !== undefined ? ` · ${count}` : '');
+      b.onclick = () => { filters.rarity = value; renderRarityChips(); renderTable(); };
+      wrap.appendChild(b);
+    };
+    makeChip('all', 'Todas las rarezas');
+    RARITY_ORDER.forEach(r => makeChip(r, RARITY_LABEL[r], `var(--rarity-${r})`, counts[r]));
+  }
+
+  function renderStats() {
+    const list = [...cards.values()];
+    const totalCards = list.length;
+    const totalUnits = list.reduce((s, c) => s + (c.quantity || 0), 0);
+    const value = list.reduce((s, c) => s + (c.purchasePrice ? c.purchasePrice * (c.quantity || 1) : 0), 0);
+    const inCount = list.filter(c => c.status !== 'out').length;
+    const outCount = list.filter(c => c.status === 'out').length;
+    $('#stats').innerHTML = `
+      <div class="stat"><div class="value">${totalCards}</div><div class="label">Cartas únicas</div></div>
+      <div class="stat"><div class="value">${totalUnits}</div><div class="label">Unidades totales</div></div>
+      <div class="stat"><div class="value">$${value.toFixed(0)}</div><div class="label">Valor estimado</div></div>
+      <div class="stat in"><div class="value">${inCount}</div><div class="label">En colección</div></div>
+      <div class="stat out"><div class="value">${outCount}</div><div class="label">Retiradas</div></div>
+    `;
+  }
+
+  function matches(c) {
+    if (filters.status === 'in' && c.status === 'out') return false;
+    if (filters.status === 'out' && c.status !== 'out') return false;
+    if (filters.rarity !== 'all' && c.rarity !== filters.rarity) return false;
+    if (filters.q) {
+      const q = filters.q.toLowerCase();
+      const hay = `${c.name} ${c.setName} ${c.setCode} ${c.collectorNumber}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  }
+
+  function totalPrice(c) {
+    if (c.purchasePrice === null || c.purchasePrice === undefined) return null;
+    return c.purchasePrice * (c.quantity || 1);
+  }
+
+  function sortValue(c) {
+    if (sort.key === 'quantity') return c.quantity ?? 0;
+    if (sort.key === 'price') return c.purchasePrice;
+    if (sort.key === 'totalPrice') return totalPrice(c);
+    return null;
+  }
+
+  function sortList(list) {
+    if (!sort.key) {
+      return list.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return list.sort((a, b) => {
+      const av = sortValue(a);
+      const bv = sortValue(b);
+      const aNull = av === null || av === undefined;
+      const bNull = bv === null || bv === undefined;
+      if (aNull && bNull) return a.name.localeCompare(b.name);
+      if (aNull) return 1;
+      if (bNull) return -1;
+      return sort.dir === 'desc' ? bv - av : av - bv;
+    });
+  }
+
+  function setSort(key) {
+    if (sort.key === key) {
+      sort.dir = sort.dir === 'desc' ? 'asc' : 'desc';
+    } else {
+      sort.key = key;
+      sort.dir = 'desc';
+    }
+    updateSortIndicators();
+    renderTable();
+  }
+
+  function updateSortIndicators() {
+    document.querySelectorAll('th.sortable').forEach(th => {
+      const key = th.getAttribute('data-sort');
+      const arrow = th.querySelector('.sort-arrow');
+      if (sort.key === key) {
+        arrow.textContent = sort.dir === 'desc' ? '↓' : '↑';
+        th.classList.add('sorted');
+      } else {
+        arrow.textContent = '';
+        th.classList.remove('sorted');
+      }
+    });
+  }
+
+  document.querySelectorAll('th.sortable').forEach(th => {
+    th.addEventListener('click', () => setSort(th.getAttribute('data-sort')));
+  });
+
+  function renderTable() {
+    const tbody = $('#tbody');
+    const empty = $('#emptyState');
+    const list = sortList([...cards.values()].filter(matches));
+    if (!list.length) {
+      tbody.innerHTML = '';
+      empty.hidden = false;
+      empty.textContent = cards.size ? 'Ninguna carta coincide con el filtro.' : 'Cargando cartón…';
+      return;
+    }
+    empty.hidden = true;
+    tbody.innerHTML = list.map(c => {
+      const out = c.status === 'out';
+      return `
+        <tr class="${out ? 'is-out' : ''}" data-id="${c.id}">
+          <td>
+            <span class="rarity-dot" style="background:var(--rarity-${c.rarity})"></span>
+            <span class="card-name">${escapeHtml(c.name)}</span>
+            ${c.foil === 'foil' ? '<div class="card-sub">Foil</div>' : ''}
+          </td>
+          <td><div>${escapeHtml(c.setName)}</div><div class="card-sub">${c.setCode} #${c.collectorNumber}</div></td>
+          <td><span class="pill ${out ? 'out' : 'in'}">${out ? 'Retirada' : 'En colección'}</span></td>
+          <td class="num">${c.quantity}</td>
+          <td class="num">${money(c.purchasePrice, c.currency)}</td>
+          <td class="num">${money(totalPrice(c), c.currency)}</td>
+          <td>${c.lastAction ? ACTION_LABEL[c.lastAction] + '<div class="card-sub">' + fmtDate(c.lastActionAt) + '</div>' : '<span class="card-sub">— sin registrar —</span>'}</td>
+        </tr>
+      `;
+    }).join('');
+    tbody.querySelectorAll('tr').forEach(tr => {
+      tr.addEventListener('click', () => openDrawer(tr.getAttribute('data-id')));
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+
+  function openDrawer(id) {
+    selectedId = id;
+    const c = cards.get(id);
+    if (!c) return;
+    $('#scrim').classList.add('open');
+    $('#drawer').classList.add('open');
+    $('#drawer').setAttribute('aria-hidden', 'false');
+
+    $('#drawerHead').innerHTML = `
+      <button class="close-btn" id="closeDrawer">✕</button>
+      <div class="set-line">${c.setCode} · #${c.collectorNumber}${c.foil === 'foil' ? ' · foil' : ''}</div>
+      <h2>${escapeHtml(c.name)}</h2>
+      <span class="pill ${c.status === 'out' ? 'out' : 'in'}">${c.status === 'out' ? 'Retirada' : 'En colección'}</span>
+      <div class="meta-grid">
+        <div><div class="k">Edición</div><div class="v">${escapeHtml(c.setName)}</div></div>
+        <div><div class="k">Cantidad</div><div class="v">${c.quantity}</div></div>
+        <div><div class="k">Condición</div><div class="v">${c.condition}</div></div>
+        <div><div class="k">Idioma</div><div class="v">${c.language}</div></div>
+        <div><div class="k">Precio unitario</div><div class="v">${money(c.purchasePrice, c.currency)}</div></div>
+        <div><div class="k">Precio total (x${c.quantity})</div><div class="v">${money(totalPrice(c), c.currency)}</div></div>
+        <div><div class="k">Agregada</div><div class="v">${fmtDate(c.added)}</div></div>
+      </div>
+    `;
+    $('#closeDrawer').onclick = closeDrawer;
+
+    $('#drawerBody').innerHTML = `
+      ${!db ? '<div class="banner">La bitácora en la nube no está disponible en esta vista — no se pueden registrar movimientos.</div>' : ''}
+      <div class="log-form">
+        <div class="section-label" style="margin-bottom:2px;">Registrar movimiento</div>
+        <div>
+          <label for="actionSelect">Acción</label>
+          <select id="actionSelect">
+            ${ACTIONS.map(a => `<option value="${a.value}">${a.label}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label for="responsableInput">Responsable (opcional)</label>
+          <input id="responsableInput" type="text" placeholder="Quién hizo el movimiento">
+        </div>
+        <div>
+          <label for="commentInput">Qué se hizo</label>
+          <textarea id="commentInput" placeholder="Detalle: a quién se vendió, por cuánto, dónde se envió a gradar…"></textarea>
+        </div>
+        <button class="submit-btn" id="submitLog" ${!db ? 'disabled' : ''}>Registrar</button>
+      </div>
+      <div>
+        <div class="section-label">Bitácora</div>
+        <div class="timeline" id="timeline"><div class="log-empty">Cargando…</div></div>
+      </div>
+    `;
+
+    try {
+      const savedResponsable = localStorage.getItem('cartonLedgerResponsable');
+      if (savedResponsable) $('#responsableInput').value = savedResponsable;
+    } catch (e) {}
+
+    $('#submitLog').onclick = () => submitLogEntry(id);
+
+    subscribeLog(id);
+  }
+
+  function closeDrawer() {
+    $('#scrim').classList.remove('open');
+    $('#drawer').classList.remove('open');
+    $('#drawer').setAttribute('aria-hidden', 'true');
+    if (logUnsub) { logUnsub(); logUnsub = null; }
+    selectedId = null;
+  }
+
+  $('#scrim').addEventListener('click', closeDrawer);
+
+  function subscribeLog(cardId) {
+    if (logUnsub) { logUnsub(); logUnsub = null; }
+    if (!db) {
+      $('#timeline').innerHTML = '<div class="log-empty">Sin conexión a la bitácora.</div>';
+      return;
+    }
+    const col = db.collection('cards/' + cardId + '/log').orderBy('at', 'desc').limit(200);
+    logUnsub = col.onSnapshot(snap => {
+      if (selectedId !== cardId) return;
+      if (!snap.docs.length) {
+        $('#timeline').innerHTML = '<div class="log-empty">Sin movimientos registrados todavía.</div>';
+        return;
+      }
+      $('#timeline').innerHTML = snap.docs.map(d => {
+        const e = d.data();
+        const def = ACTIONS.find(a => a.value === e.action);
+        const cls = def && def.status === 'out' ? 'out' : def && def.status === 'in' ? 'in' : '';
+        return `
+          <div class="entry ${cls}">
+            <div class="rail"><div class="node"></div></div>
+            <div class="body">
+              <div class="action-label">${ACTION_LABEL[e.action] || e.action}</div>
+              <div class="comment">${e.comment ? escapeHtml(e.comment) : ''}</div>
+              <div class="when">${fmtDate(e.at)}${e.actor ? ' · ' + escapeHtml(e.actor) : ''}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }, err => {
+      $('#timeline').innerHTML = '<div class="log-empty">No se pudo cargar la bitácora.</div>';
+    });
+  }
+
+  async function submitLogEntry(cardId) {
+    const action = $('#actionSelect').value;
+    const comment = $('#commentInput').value.trim();
+    const actor = $('#responsableInput').value.trim();
+    const def = ACTIONS.find(a => a.value === action);
+    if (!db) return;
+    const btn = $('#submitLog');
+    btn.disabled = true;
+    btn.textContent = 'Guardando…';
+    try {
+      const now = new Date().toISOString();
+      try { localStorage.setItem('cartonLedgerResponsable', actor); } catch (e) {}
+      await db.collection('cards/' + cardId + '/log').add({
+        action, comment: comment || null, actor: actor || null, at: now,
+      });
+      const patch = { lastAction: action, lastActionAt: now };
+      if (def && def.status) patch.status = def.status;
+      await db.doc('cards/' + cardId).update(patch);
+      $('#commentInput').value = '';
+      toast('Movimiento registrado.');
+    } catch (e) {
+      toast('No se pudo guardar: ' + (e && e.message ? e.message : 'error desconocido'));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Registrar';
+    }
+  }
+
+  $('#searchInput').addEventListener('input', (e) => {
+    filters.q = e.target.value;
+    renderTable();
+  });
+
+  document.querySelectorAll('#statusSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#statusSeg button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      filters.status = b.getAttribute('data-status');
+      renderTable();
+    });
+  });
+
+  // --- Import CSV / text ---
+
+  let importPlan = [];
+
+  function openImport() {
+    $('#importScrim').classList.add('open');
+    $('#importModal').classList.add('open');
+    $('#importModal').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeImport() {
+    $('#importScrim').classList.remove('open');
+    $('#importModal').classList.remove('open');
+    $('#importModal').setAttribute('aria-hidden', 'true');
+  }
+
+  $('#openImportBtn').addEventListener('click', openImport);
+  $('#closeImport').addEventListener('click', closeImport);
+  $('#importScrim').addEventListener('click', closeImport);
+
+  $('#csvFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $('#fileName').textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = () => { $('#csvText').value = reader.result; };
+    reader.onerror = () => toast('No se pudo leer el archivo.');
+    reader.readAsText(file);
+  });
+
+  function slugify(s) {
+    return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '') || 'carta';
+  }
+
+  function parseCsv(text) {
+    const rows = [];
+    let field = '', row = [], inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (inQuotes) {
+        if (ch === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; } else { inQuotes = false; }
+        } else {
+          field += ch;
+        }
+      } else if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        row.push(field); field = '';
+      } else if (ch === '\r') {
+        // skip
+      } else if (ch === '\n') {
+        row.push(field); field = ''; rows.push(row); row = [];
+      } else {
+        field += ch;
+      }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
+  }
+
+  function parseImportText(text) {
+    const rows = parseCsv(text);
+    if (!rows.length) return [];
+    const header = rows[0].map(h => h.trim());
+    const idxOf = (...names) => {
+      for (const n of names) {
+        const idx = header.findIndex(h => h.toLowerCase() === n.toLowerCase());
+        if (idx !== -1) return idx;
+      }
+      return -1;
+    };
+    const col = {
+      name: idxOf('Name'),
+      setCode: idxOf('Set code'),
+      setName: idxOf('Set name'),
+      collectorNumber: idxOf('Collector number'),
+      foil: idxOf('Foil'),
+      rarity: idxOf('Rarity'),
+      quantity: idxOf('Quantity'),
+      manaboxId: idxOf('ManaBox ID', 'Manabox Id'),
+      scryfallId: idxOf('Scryfall ID'),
+      purchasePrice: idxOf('Purchase price'),
+      currency: idxOf('Purchase price currency'),
+      condition: idxOf('Condition'),
+      language: idxOf('Language'),
+      added: idxOf('Added'),
+    };
+    if (col.name === -1) return null; // no recognizable header
+    const out = [];
+    for (let r = 1; r < rows.length; r++) {
+      const cells = rows[r];
+      const get = (idx) => idx === -1 ? '' : (cells[idx] || '').trim();
+      const name = get(col.name);
+      if (!name) continue;
+      const foil = get(col.foil).toLowerCase() === 'foil' ? 'foil' : 'normal';
+      const rarityRaw = get(col.rarity).toLowerCase();
+      const rarity = ['common', 'uncommon', 'rare', 'mythic'].includes(rarityRaw) ? rarityRaw : 'common';
+      const qty = parseInt(get(col.quantity), 10);
+      const priceRaw = get(col.purchasePrice);
+      const price = priceRaw === '' ? null : parseFloat(priceRaw);
+      out.push({
+        name,
+        setCode: get(col.setCode) || '—',
+        setName: get(col.setName) || get(col.setCode) || 'Sin edición',
+        collectorNumber: get(col.collectorNumber) || '',
+        foil,
+        rarity,
+        quantity: Number.isFinite(qty) && qty > 0 ? qty : 1,
+        manaboxId: get(col.manaboxId),
+        scryfallId: get(col.scryfallId) || null,
+        purchasePrice: Number.isFinite(price) ? price : null,
+        currency: get(col.currency) || 'USD',
+        condition: get(col.condition) || 'near_mint',
+        language: get(col.language) || 'en',
+        added: get(col.added) || new Date().toISOString(),
+      });
+    }
+    return out;
+  }
+
+  function buildImportPlan(rows) {
+    const plan = [];
+    const withinBatch = new Map();
+    let skippedExisting = 0;
+    for (const r of rows) {
+      const base = (r.manaboxId || ('nuevo-' + slugify(r.name))) + '-' + r.foil;
+      if (cards.has(base) && !withinBatch.has(base)) {
+        skippedExisting++;
+        continue;
+      }
+      let n = withinBatch.get(base) || 0;
+      let id = n === 0 ? base : base + '-' + n;
+      while (cards.has(id) || plan.some(p => p.id === id)) { n++; id = base + '-' + n; }
+      withinBatch.set(base, n + 1);
+      plan.push({
+        id,
+        card: {
+          name: r.name, setCode: r.setCode, setName: r.setName, collectorNumber: r.collectorNumber,
+          foil: r.foil, rarity: r.rarity, quantity: r.quantity,
+          manaboxId: r.manaboxId || null, scryfallId: r.scryfallId,
+          purchasePrice: r.purchasePrice, currency: r.currency,
+          condition: r.condition, language: r.language, added: r.added,
+          status: 'in', lastAction: null, lastActionAt: null,
+        },
+      });
+    }
+    return { plan, skippedExisting };
+  }
+
+  $('#parseBtn').addEventListener('click', () => {
+    const text = $('#csvText').value;
+    const summary = $('#importSummary');
+    summary.className = 'import-summary';
+    if (!text.trim()) {
+      summary.textContent = 'Pega o carga un CSV primero.';
+      importPlan = [];
+      $('#confirmImportBtn').disabled = true;
+      return;
+    }
+    const rows = parseImportText(text);
+    if (rows === null) {
+      summary.className = 'import-summary warn';
+      summary.textContent = 'No se reconoció una columna "Name" en el encabezado. Revisa que la primera línea tenga los nombres de columna.';
+      importPlan = [];
+      $('#confirmImportBtn').disabled = true;
+      return;
+    }
+    const { plan, skippedExisting } = buildImportPlan(rows);
+    importPlan = plan;
+    const lines = [];
+    if (plan.length) {
+      lines.push(`Se importarán ${plan.length} carta(s) nueva(s).`);
+      lines.push(plan.slice(0, 6).map(p => '· ' + p.card.name).join('\n'));
+      if (plan.length > 6) lines.push(`… y ${plan.length - 6} más.`);
+    } else {
+      lines.push('No hay cartas nuevas para importar.');
+    }
+    if (skippedExisting) lines.push(`${skippedExisting} fila(s) omitida(s) por coincidir con cartas que ya están en el cartón.`);
+    summary.textContent = lines.join('\n');
+    summary.classList.toggle('ready', plan.length > 0);
+    $('#confirmImportBtn').disabled = !plan.length;
+  });
+
+  $('#confirmImportBtn').addEventListener('click', async () => {
+    if (!db || !importPlan.length) return;
+    const btn = $('#confirmImportBtn');
+    const summary = $('#importSummary');
+    btn.disabled = true;
+    $('#parseBtn').disabled = true;
+    const total = importPlan.length;
+    let done = 0;
+    summary.className = 'import-summary';
+    const chunkSize = 15;
+    try {
+      for (let i = 0; i < importPlan.length; i += chunkSize) {
+        const chunk = importPlan.slice(i, i + chunkSize);
+        await Promise.all(chunk.map(p => db.doc('cards/' + p.id).set(p.card)));
+        done += chunk.length;
+        summary.textContent = `Importando… ${done}/${total}`;
+      }
+      summary.classList.add('ready');
+      summary.textContent = `Listo — se agregaron ${total} carta(s) al cartón.`;
+      importPlan = [];
+      $('#csvText').value = '';
+      $('#csvFile').value = '';
+      $('#fileName').textContent = '';
+      toast(`${total} carta(s) agregada(s).`);
+    } catch (e) {
+      summary.className = 'import-summary warn';
+      summary.textContent = 'Error al importar: ' + (e && e.message ? e.message : 'error desconocido');
+    } finally {
+      $('#parseBtn').disabled = false;
+      btn.disabled = importPlan.length === 0;
+    }
+  });
+
+  async function init() {
+    try {
+      db = await claude.use('db');
+    } catch (e) {
+      db = null;
+    }
+    if (!db) {
+      $('#emptyState').hidden = false;
+      $('#emptyState').innerHTML = 'La base de datos no está disponible en esta vista.<br>Abre este Artifact publicado para usar la bitácora.';
+      renderRarityChips();
+      renderStats();
+      return;
+    }
+    db.collection('cards').onSnapshot(snap => {
+      cards.clear();
+      snap.docs.forEach(d => cards.set(d.id, { id: d.id, ...d.data() }));
+      renderRarityChips();
+      renderStats();
+      renderTable();
+    }, err => {
+      toast('Error leyendo el cartón: ' + err.message);
+    });
+  }
+
+  init();
+</script>
