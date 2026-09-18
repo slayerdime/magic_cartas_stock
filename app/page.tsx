@@ -4,15 +4,25 @@ import { useMemo, useState } from 'react'
 import { ArrowUpRight, ChevronDown, Moon, Search, ShieldCheck, Sparkles, Sun } from 'lucide-react'
 import rawCards from '../cards.json'
 
-type Card = { name: string; setCode: string; setName: string; rarity: string; foil: string; quantity: number; purchasePrice: number | null; condition: string }
+type Card = { name: string; setCode: string; setName: string; rarity: string; foil: string; quantity: number; purchasePrice: number | null; condition: string; scryfallId?: string }
+
+function getScryfallImage(card: Card) {
+  if (!card.scryfallId) return null
+  const id = card.scryfallId.toLowerCase()
+  return `https://cards.scryfall.io/normal/front/${id.slice(0, 1)}/${id.slice(1, 2)}/${id}.jpg`
+}
 const cards = (rawCards as unknown[]).map((item) => { const record = item as { data?: Card }; return record.data ?? (item as Card) }).filter((card): card is Card => Boolean(card && 'name' in card))
 const featured = cards.slice(0, 4)
 const rarityLabels: Record<string, string> = { mythic: 'Mítica', rare: 'Rara', uncommon: 'Poco común', common: 'Común' }
 
 function CollectionCard({ card, index }: { card: Card; index: number }) {
   const palettes = ['card-indigo', 'card-amber', 'card-ink', 'card-sand']
+  const imageUrl = getScryfallImage(card)
   return <article className="collection-card">
-    <div className={`card-art ${palettes[index % palettes.length]}`}><span className="mana">{index === 0 ? '✦' : index === 1 ? '◈' : '◉'}</span><span className="set-mark">{card.setCode}</span><div className="art-glow" /></div>
+    <div className={`card-art ${palettes[index % palettes.length]}`}>
+      {imageUrl ? <img src={imageUrl} alt={`Carta ${card.name}`} loading="lazy" /> : <><span className="mana">{index === 0 ? '✦' : index === 1 ? '◈' : '◉'}</span><div className="art-glow" /></>}
+      <span className="set-mark">{card.setCode}</span>
+    </div>
     <div className="collection-info"><div><p className="eyebrow">{rarityLabels[card.rarity] ?? card.rarity}</p><h3>{card.name}</h3><p className="muted">{card.setName}</p></div><ArrowUpRight size={17} /></div>
   </article>
 }
